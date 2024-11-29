@@ -20,7 +20,7 @@ Store Distill("Distill juice to get concentrate and aroma", 1000);
 
 
 Queue appleToCrateQueue("Apple go to crate queue");
-Queue applesToFactory("Apple in factory queue");
+Queue appleInFactory("Apple in factory queue");
 Queue appleToWasher("Apple go to washer queue");
 Queue appleToJuiceMaker("Apple go to washer queue");
 Queue juiceToDistillQueue("Juice from juice maker");
@@ -153,15 +153,16 @@ void Apple::Behavior() {
         if (!Trucks.Empty()){
             Truck* truckInFactory = factoryTrucks.front();
             factoryTrucks.erase(factoryTrucks.begin());
-            Into(applesToFactory);
+            applesInFactory.insert(applesInFactory.end(), truckInFactory->apples_in_truck.begin(), truckInFactory->apples_in_truck.end());
             truckInFactory->apples_in_truck.clear();
             delete truckInFactory;
             Wait(Exponential(3600));
             Leave(Trucks, 1);
         }
     }
-
-
+    if(isInQueue()){
+        simlib3::Entity::Out();
+    }
 }
 
 
@@ -181,6 +182,7 @@ class AppleWasher : public Process{
         while (!appleToWasher.Empty()){
                 Enter(Washer, 1);
                 Apple *apple = (Apple *)appleToWasher.GetFirst();
+                apple->Out();
                 apple->setClean();
                 apple->Into(appleToJuiceMaker);
                 Wait(Exponential(10));
