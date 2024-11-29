@@ -5,15 +5,17 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <unordered_set>
 
 #define GROUP_SIZE 32
 #define TRUCK_CAPACITY 10
 #define Norm(a, b) (std::max(0.0, Normal(a, b)))
 
-Store Crates("Boxes for apple", 20);
-Store Trucks("Trucks for apple transport", 2);
+unsigned long apples_created = 0;
+Store Crates("Boxes for apple", 1000);
+Store Trucks("Trucks for apple transport", 10000);
 Store People("People that collect apple from tree", 50);
-Store Forklift("Forklift that transports apple crates to truck", 1);
+Facility Forklift("Forklift that transports apple crates to truck");
 Store Washer("Forklift that transports apple crates to truck", 100);
 Store JuiceMaker("Juicemaker in factory to generate juice", 250);
 Store Distill("Distill juice to get concentrate and aroma", 1000);
@@ -22,7 +24,7 @@ Store Distill("Distill juice to get concentrate and aroma", 1000);
 Queue appleToCrateQueue("Apple go to crate queue");
 Queue appleInFactory("Apple in factory queue");
 Queue appleToWasher("Apple go to washer queue");
-Queue appleToJuiceMaker("Apple go to washer queue");
+Queue appleToJuiceMaker("Apple go to JuiceMaker queue");
 Queue juiceToDistillQueue("Juice from juice maker");
 
 
@@ -75,6 +77,18 @@ public:
     }
 };
 
+int hasDuplicateApples(const std::vector<Apple *>& applesInFactory) {
+    std::unordered_set<Apple *> seenApples;
+    int result = 0;
+    for (Apple * apple : applesInFactory) {
+        if (seenApples.find(apple) != seenApples.end()) {
+            result++; // Duplicate pointer found
+        }
+        seenApples.insert(apple);
+    }
+
+    return result; // No duplicates
+}
 
 class Box {
 
@@ -115,54 +129,24 @@ Box *box = new Box();
 Apple::Apple(bool isSpoiled, double Liquid) : isSpoiled(isSpoiled), Liquid(Liquid) {}
 
 void Apple::Behavior() {
-
+    apples_created++;
     Enter(People, 1);
     apples_made++;
     if (isSpoiled){
         Leave(People, 1);
         apples_were_spoiled++;
         Cancel();
-    }else{
-        Into(appleToCrateQueue);
     }
     Wait(Uniform(5, 10));
     Leave(People, 1);
-    for (int i = 0; i < box->capacity; i++) {
-        if (!appleToCrateQueue.Empty()){
-            Apple *apple = (Apple *)appleToCrateQueue.GetFirst();
-            box->insertAppleToBox(apple);
-        }
-    }
-    if (box->apples_in_crate.size() == box->capacity){
-        Enter(Crates, 1);
-        boxQueue.push_back(box);
-        box = new Box();
-        Enter(Forklift, 1);
-        Box *boxToTruck = boxQueue.front();
-        boxQueue.erase(boxQueue.begin());
-        truck->addAppleToTruck(boxToTruck->apples_in_crate);
-        Leave(Crates, 1);
-        delete boxToTruck;
-        Wait(Exponential(120));
-        Leave(Forklift, 1);
-    }
-    if (truck->size == TRUCK_CAPACITY){
-        Enter(Trucks, 1);
-        factoryTrucks.push_back(truck);
-        truck = new Truck();
-        if (!Trucks.Empty()){
-            Truck* truckInFactory = factoryTrucks.front();
-            factoryTrucks.erase(factoryTrucks.begin());
-            applesInFactory.insert(applesInFactory.end(), truckInFactory->apples_in_truck.begin(), truckInFactory->apples_in_truck.end());
-            truckInFactory->apples_in_truck.clear();
-            delete truckInFactory;
-            Wait(Exponential(3600));
-            Leave(Trucks, 1);
-        }
-    }
-    if(isInQueue()){
-        simlib3::Entity::Out();
-    }
+    Enter(Crates, 1);
+    Seize(Forklift);
+    Leave(Crates, 1);
+    Release(Forklift);
+    Enter(Trucks, 1);
+    applesInFactory.push_back(this);
+    Leave(Trucks, 1);
+    Passivate();
 }
 
 
@@ -171,23 +155,28 @@ class AppleGenerator : public Event
     void Behavior() override
     {
         (new Apple(Random() > 0.995, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = Exponential(0.1);
+        double d = Exponential(1);
         Activate(Time + d);
     }
 };
 
 class AppleWasher : public Process{
-
+    
     void Behavior() override{
+        opak:
         while (!appleToWasher.Empty()){
                 Enter(Washer, 1);
                 Apple *apple = (Apple *)appleToWasher.GetFirst();
-                apple->Out();
                 apple->setClean();
                 apple->Into(appleToJuiceMaker);
-                Wait(Exponential(10));
                 Leave(Washer, 1);
         }
+        if(40000 > Time){
+            Wait(1);
+            goto opak;
+        }
+
+        Passivate();
     }
 };
 
@@ -205,17 +194,15 @@ JuiceApple::JuiceApple(double juice) : juice(juice) {}
 class AppleJuiceMaker : public Process{
 
     void Behavior() override{
-//        while (!appleToJuiceMaker.Empty()){
-//
-//                Enter(JuiceMaker, 1);
-//                Apple *apple = (Apple *)appleToJuiceMaker.GetFirst();
-//                JuiceApple *juice = (new JuiceApple(apple->getLiquid()));
-//                apple->Cancel();
-//                juice->Into(juiceToDistillQueue);
-//                Wait(620);
-//                Leave(JuiceMaker, 1);
-//
-//        }
+        while (!appleToJuiceMaker.Empty()){
+                Enter(JuiceMaker, 1);
+                Apple *apple = (Apple *)appleToJuiceMaker.GetFirst();
+                JuiceApple *juice = (new JuiceApple(apple->getLiquid()));
+                apple->Cancel();
+                juice->Into(juiceToDistillQueue);
+                Leave(JuiceMaker, 1);
+        }
+
     }
 };
 
@@ -238,7 +225,9 @@ class DistillStation : public Process{
                 aromaLiquid -= 1000;
                 aromaLiquid++;
             }
+
         }
+        Passivate();
     }
 };
 
@@ -246,7 +235,7 @@ class Factory : public Process
 {
     void Behavior() override
     {
-        Wait(5000);
+        Wait(10000);
         (new AppleWasher)->Activate();
         (new AppleJuiceMaker)->Activate();
         (new DistillStation)->Activate();
@@ -255,7 +244,7 @@ class Factory : public Process
             applesInFactory.erase(applesInFactory.begin());
             apple->Into(appleToWasher);
         }
-
+        Passivate();
 
     }
 public:
@@ -273,9 +262,11 @@ int main()
     (new Factory)->Activate();
     Run();
     Crates.Output();
+    Print("Apples created: %d\n\n", apples_created);
     Print("Apples got in: %d\n\n", apples_made);
     Print("Apples spoiled: %d\n\n", apples_were_spoiled);
     Print("Apples in factory: %d\n\n", applesInFactory.size());
+    Print("Apples in factory: %d\n\n", hasDuplicateApples(applesInFactory));
     Trucks.Output();
     Forklift.Output();
     People.Output();
