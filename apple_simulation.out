@@ -1,0 +1,85 @@
+Apples created: 1026
+Apples washed: 1026
+Apples spoiled: 7
+Apples waiting in queue: 0
+Apples chopped: 1019
+Apples juiced: 1019
+Total juice: 171646.00 
++----------------------------------------------------------+
+| STORE Washing Machine                                    |
++----------------------------------------------------------+
+|  Capacity = 2  (0 used, 2 free)                          |
+|  Time interval = 0 - 5000                                |
+|  Number of Enter operations = 1026                       |
+|  Minimal used capacity = 0                               |
+|  Maximal used capacity = 2                               |
+|  Average used capacity = 0.2052                          |
++----------------------------------------------------------+
+  Input queue 'Washing Machine.Q'
++----------------------------------------------------------+
+| QUEUE Q                                                  |
++----------------------------------------------------------+
+|  Time interval = 0 - 5000                                |
+|  Incoming  349                                           |
+|  Outcoming  349                                          |
+|  Current length = 0                                      |
+|  Maximal length = 7                                      |
+|  Average length = 0.037553                               |
+|  Minimal time = 0.00551523                               |
+|  Maximal time = 3.52434                                  |
+|  Average time = 0.538008                                 |
+|  Standard deviation = 0.45812                            |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE Apples chopper                                     |
++----------------------------------------------------------+
+|  Capacity = 2  (0 used, 2 free)                          |
+|  Time interval = 0 - 5000                                |
+|  Number of Enter operations = 1019                       |
+|  Minimal used capacity = 0                               |
+|  Maximal used capacity = 2                               |
+|  Average used capacity = 0.3057                          |
++----------------------------------------------------------+
+  Input queue 'Apples chopper.Q'
++----------------------------------------------------------+
+| QUEUE Q                                                  |
++----------------------------------------------------------+
+|  Time interval = 0 - 5000                                |
+|  Incoming  643                                           |
+|  Outcoming  643                                          |
+|  Current length = 0                                      |
+|  Maximal length = 5                                      |
+|  Average length = 0.13394                                |
+|  Minimal time = 0.00103685                               |
+|  Maximal time = 3.55374                                  |
+|  Average time = 1.04152                                  |
+|  Standard deviation = 0.749047                           |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE Juicer                                             |
++----------------------------------------------------------+
+|  Capacity = 2  (0 used, 2 free)                          |
+|  Time interval = 0 - 5000                                |
+|  Number of Enter operations = 1019                       |
+|  Minimal used capacity = 0                               |
+|  Maximal used capacity = 2                               |
+|  Average used capacity = 0.4076                          |
++----------------------------------------------------------+
+  Input queue 'Juicer.Q'
++----------------------------------------------------------+
+| QUEUE Q                                                  |
++----------------------------------------------------------+
+|  Time interval = 0 - 5000                                |
+|  Incoming  998                                           |
+|  Outcoming  998                                          |
+|  Current length = 0                                      |
+|  Maximal length = 29                                     |
+|  Average length = 1.8788                                 |
+|  Minimal time = 0.00461984                               |
+|  Maximal time = 28.1036                                  |
+|  Average time = 9.41281                                  |
+|  Standard deviation = 6.2076                             |
++----------------------------------------------------------+
+
