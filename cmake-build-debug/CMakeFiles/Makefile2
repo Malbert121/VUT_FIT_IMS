@@ -54,10 +54,10 @@ RM = /home/malbert/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/malbert/Projects/IMS
+CMAKE_SOURCE_DIR = /home/malbert/Projects/IAL/VUT_FIT_IMS
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/malbert/Projects/IMS/cmake-build-debug
+CMAKE_BINARY_DIR = /home/malbert/Projects/IAL/VUT_FIT_IMS/cmake-build-debug
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -81,14 +81,14 @@ clean: CMakeFiles/IMS.dir/clean
 CMakeFiles/IMS.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IMS.dir/build.make CMakeFiles/IMS.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/IMS.dir/build.make CMakeFiles/IMS.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/malbert/Projects/IMS/cmake-build-debug/CMakeFiles --progress-num=1,2 "Built target IMS"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/malbert/Projects/IAL/VUT_FIT_IMS/cmake-build-debug/CMakeFiles --progress-num=1,2 "Built target IMS"
 .PHONY : CMakeFiles/IMS.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/IMS.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/malbert/Projects/IMS/cmake-build-debug/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/malbert/Projects/IAL/VUT_FIT_IMS/cmake-build-debug/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/IMS.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/malbert/Projects/IMS/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/malbert/Projects/IAL/VUT_FIT_IMS/cmake-build-debug/CMakeFiles 0
 .PHONY : CMakeFiles/IMS.dir/rule
 
 # Convenience name for target.

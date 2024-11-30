@@ -1,278 +1,245 @@
-//
-// Pool simulation before reconstruction
-//
-#include "simlib.h"
+#include <simlib.h>             //TODO FIX ALL TIME
 #include <iostream>
-#include <vector>
-#include <algorithm>
-#include <unordered_set>
-
-#define GROUP_SIZE 32
-#define TRUCK_CAPACITY 10
-#define Norm(a, b) (std::max(0.0, Normal(a, b)))
-
-unsigned long apples_created = 0;
-Store Crates("Boxes for apple", 1000);
-Store Trucks("Trucks for apple transport", 10000);
-Store People("People that collect apple from tree", 50);
-Facility Forklift("Forklift that transports apple crates to truck");
-Store Washer("Forklift that transports apple crates to truck", 100);
-Store JuiceMaker("Juicemaker in factory to generate juice", 250);
-Store Distill("Distill juice to get concentrate and aroma", 1000);
+#include <cmath>
 
 
-Queue appleToCrateQueue("Apple go to crate queue");
-Queue appleInFactory("Apple in factory queue");
-Queue appleToWasher("Apple go to washer queue");
-Queue appleToJuiceMaker("Apple go to JuiceMaker queue");
-Queue juiceToDistillQueue("Juice from juice maker");
+Store WashingMachine("Washing Machine", 100);
+Store Chopper("Apples chopper", 100);
+Store Juicer("Juicer", 100);
+Store PulpDestroyer("PulpDestroyer", 170000);
+Store DistillStation("DistillStation", 170000);
+Store ConcentrateBarrel("ConcentrateBarrel", 10000);
+Store AromaBarrel("AromaBarrel", 1000);
+Store Storage("Factory storage", 2000);
+
+Facility Pour("Pour");
+Facility ConcentrateCheck("ConcentrateCheck");
 
 
+Queue aromaQueue("BarrelAroma waits if i can pour to Juice");
+Queue concentrateQueue("BarrelAroma waits if i can pour to Juice");
+
+// Counters
+unsigned apples_created = 0;
+unsigned apples_washed = 0;
+unsigned apples_spoiled = 0;
+unsigned apples_chopped = 0;
+unsigned apples_juiced = 0;
+double total_liquid = 0;
+unsigned barrel_created = 0;
+unsigned spoilage_events = 0;
+unsigned barrel_spoiled = 0;
+unsigned aroma_created = 0;
+unsigned juice_packets_created = 0;
+
+// Apple class to simulate apple creation and washing
+class BarrelConcentrate : public Process {
+
+public:
+    double Value;
+    explicit BarrelConcentrate(double Size);
+    void Behavior() override{
+        Seize(ConcentrateCheck);
+        Wait(100);
+        Release(ConcentrateCheck);
+        Into(concentrateQueue);
+        Passivate();
+    }
+};
+
+BarrelConcentrate::BarrelConcentrate(double Size) : Value(Size) {}
+
+class BarrelAroma : public Process{
+
+public:
+    double Value;
+    explicit BarrelAroma(double Value);
+    void Behavior() override{
+        if (Random() < 0.60){
+            Wait(10);
+            Into(aromaQueue);
+            Passivate();
+        }
+        else{
+            Wait(100);
+            Enter(Storage, 1);
+        }
+
+    }
+};
+
+BarrelAroma::BarrelAroma(double Value) : Value(Value) {}
 
 
-
-// 6-9 morning groups
-int MorningGroups = 2;
-// 9-15 no groups
-int AfternoonNoGroups = 6;
-// 15-20 evening groups
-int EveningGroups = 5;
-// total people got in
-int people_got_in = 0;
-
-double concentrate = 0;
-double aromaLiquid = 0;
-double juice_maded = 0;
-unsigned long barrels_of_concentrate = 0;
-unsigned long barrels_of_aroma = 0;
-unsigned long apples_made = 0;
-unsigned long apples_were_spoiled = 0;
-unsigned long apples_ready_to_box = 0;
-unsigned long boxes_in_truck = 0;
-
-
-Histogram TimeInFactory("Time spent in the factory", 0, 600, 20);
-Histogram ApplesSpentOnMakingJuice("Apple spent on making juice", 0, 600, 20);
-Histogram JuiceMade("Juice made in litres", 0, 600, 20);
-Histogram ApplesWereRejected("Amount of swimmer's interruptions", 0, 1, 10);
-
-
-/**
- * Apple class
- */
 class Apple : public Process
 {
 private:
-    double Liquid;
     bool isSpoiled;
-    bool isDirty = true;
-public:
-    Apple(bool isSpoiled, double Liquid);
-    void Behavior() override;
-    double getLiquid() {
-        return Liquid;
-    };
-    void setClean(){
-        isDirty = false;
-    }
-};
+    double Liquid;
 
-int hasDuplicateApples(const std::vector<Apple *>& applesInFactory) {
-    std::unordered_set<Apple *> seenApples;
-    int result = 0;
-    for (Apple * apple : applesInFactory) {
-        if (seenApples.find(apple) != seenApples.end()) {
-            result++; // Duplicate pointer found
+public:
+    Apple(bool isSpoiled, double Liquid) : isSpoiled(isSpoiled), Liquid(Liquid) {}
+
+    void Behavior() override {
+        apples_created++;
+
+        Enter(WashingMachine, 1);
+        Wait(1);        //wash 1 second
+        Leave(WashingMachine, 1);
+        apples_washed++;
+
+        if (isSpoiled) {
+            apples_spoiled++;
+            Cancel();
         }
-        seenApples.insert(apple);
-    }
 
-    return result; // No duplicates
-}
 
-class Box {
+        Enter(Chopper, 1);
 
-public:
-    std::vector<Apple *> apples_in_crate;
-    int capacity = 1000 + ((int)Exponential(100) % 200);
-    Box();
-    void insertAppleToBox(Apple *apple){
-        apples_in_crate.push_back(apple);
+        Wait(1.5);
+        Leave(Chopper, 1);
+        apples_chopped++;
+
+        Enter(Juicer, 1);
+        Wait(2);
+        Leave(Juicer, 1);
+        apples_juiced++;
+        Enter(PulpDestroyer, Liquid);
+        Wait(2);
+        total_liquid += Liquid;
+        Leave(PulpDestroyer, Liquid);
+
+        Enter(DistillStation, Liquid);
+        Wait(2);
+        Leave(DistillStation, Liquid);
+
+
+        auto concentrateLiquid = std::lround(Liquid * Uniform(0.10, 0.15));
+        auto aromaLiquid = std::lround(concentrateLiquid * Uniform(0.10, 0.15));
+        Enter(ConcentrateBarrel, concentrateLiquid);  //  TODO ADD AROMA PROCESS?
+        Seize(Pour);
+        if (ConcentrateBarrel.Used() >= 9800){
+            (new BarrelConcentrate((double)ConcentrateBarrel.Used()))->Activate();
+            barrel_created++;
+            Leave(ConcentrateBarrel, ConcentrateBarrel.Used());
+        }
+        Enter(AromaBarrel, aromaLiquid);
+        if (AromaBarrel.Used() >= 980){
+            (new BarrelAroma((double )AromaBarrel.Used()))->Activate();
+            aroma_created++;
+            Leave(AromaBarrel, AromaBarrel.Used());
+        }
+        Wait(1);
+        Release(Pour);
+
     }
 };
-Box::Box() = default;
-
-class Truck {
-
-public:
-    std::vector<Apple *> apples_in_truck;
-    int size = 0;
-    Truck();
-    void addAppleToTruck(std::vector<Apple *> apples){
-        apples_in_truck.insert(apples_in_truck.end(), apples.begin(), apples.end());
-        apples.clear();
-        this->size++;
-    }
-};
-Truck::Truck() = default;
-
-std::vector<Apple *> applesInFactory;
-
-std::vector<Box *> boxQueue;
-
-std::vector<Truck *> factoryTrucks;
-
-Truck *truck = new Truck();
-
-Box *box = new Box();
-
-Apple::Apple(bool isSpoiled, double Liquid) : isSpoiled(isSpoiled), Liquid(Liquid) {}
-
-void Apple::Behavior() {
-    apples_created++;
-    Enter(People, 1);
-    apples_made++;
-    if (isSpoiled){
-        Leave(People, 1);
-        apples_were_spoiled++;
-        Cancel();
-    }
-    Wait(Uniform(5, 10));
-    Leave(People, 1);
-    Enter(Crates, 1);
-    Seize(Forklift);
-    Leave(Crates, 1);
-    Release(Forklift);
-    Enter(Trucks, 1);
-    applesInFactory.push_back(this);
-    Leave(Trucks, 1);
-    Passivate();
-}
 
 
 class AppleGenerator : public Event
 {
-    void Behavior() override
+    void Behavior() override   // do not stop  
     {
-        (new Apple(Random() > 0.995, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = Exponential(1);
+        (new Apple(Random() > 0.97, 100 + ((int)Exponential(100) % 200)))->Activate();
+        double d = Exponential(0.1);
         Activate(Time + d);
     }
 };
 
-class AppleWasher : public Process{
-    
-    void Behavior() override{
-        opak:
-        while (!appleToWasher.Empty()){
-                Enter(Washer, 1);
-                Apple *apple = (Apple *)appleToWasher.GetFirst();
-                apple->setClean();
-                apple->Into(appleToJuiceMaker);
-                Leave(Washer, 1);
-        }
-        if(40000 > Time){
-            Wait(1);
-            goto opak;
-        }
-
-        Passivate();
-    }
-};
-
-class JuiceApple : public Process{
-
-    void Behavior() override{
-        Passivate();
-    }
-    public:
-        double juice;
-        JuiceApple(double juice);
-};
-JuiceApple::JuiceApple(double juice) : juice(juice) {}
-
-class AppleJuiceMaker : public Process{
-
-    void Behavior() override{
-        while (!appleToJuiceMaker.Empty()){
-                Enter(JuiceMaker, 1);
-                Apple *apple = (Apple *)appleToJuiceMaker.GetFirst();
-                JuiceApple *juice = (new JuiceApple(apple->getLiquid()));
-                apple->Cancel();
-                juice->Into(juiceToDistillQueue);
-                Leave(JuiceMaker, 1);
-        }
-
-    }
-};
-
-class DistillStation : public Process{
-
-    void Behavior() override{
-        while (!juiceToDistillQueue.Empty()){
-            Enter(Distill, 1);
-            auto appleJuice = (JuiceApple *)juiceToDistillQueue.GetFirst();
-            double ratio = Uniform(0.30, 0.35);
-            concentrate += appleJuice->juice * ratio;
-            aromaLiquid += appleJuice->juice * ratio * ratio;
-            appleJuice->Cancel();
-            Leave(Distill, 1);
-            if (concentrate >= 1000){
-                concentrate -= 1000;
-                barrels_of_concentrate++;
-            }
-            if (aromaLiquid >= 1000){
-                aromaLiquid -= 1000;
-                aromaLiquid++;
-            }
-
-        }
-        Passivate();
-    }
-};
-
-class Factory : public Process
+class BadGenerator : public Event
 {
     void Behavior() override
     {
-        Wait(10000);
-        (new AppleWasher)->Activate();
-        (new AppleJuiceMaker)->Activate();
-        (new DistillStation)->Activate();
-        while (!applesInFactory.empty()){
-            Apple * apple = applesInFactory.front();
-            applesInFactory.erase(applesInFactory.begin());
-            apple->Into(appleToWasher);
+        if (Random() < 0.4){
+            if(ConcentrateCheck.Busy()){
+                Entity * barrelSpoiled = ConcentrateCheck.In();
+                barrelSpoiled->Cancel();
+                ConcentrateCheck.Clear();
+                barrel_spoiled++;
+            }
+        } else{
+
         }
-        Passivate();
 
+        Activate(Time + Exponential(3600 * 6));                   // TODO FIX TIME
     }
-public:
-    Factory();
 };
-Factory::Factory() {}
+
+class JuiceMadeProcess : public Process
+        {
+    public:
+            JuiceMadeProcess();
+            void Behavior() override{
+                Wait(1000);
+                idle:
+                while (!concentrateQueue.Empty() && !aromaQueue.Empty()){
+                    auto *concentrate = (BarrelConcentrate *)concentrateQueue.GetFirst();
+                    auto *aroma = (BarrelAroma *)aromaQueue.GetFirst();
+                    auto usingConcentrate =Uniform(100, 150);
+                    auto usingAroma = Uniform(0.1, 0.2);
+                    while (concentrate->Value > usingConcentrate){
+                        if (aroma->Value >= usingAroma){
+                            concentrate->Value -= usingConcentrate;
+                            aroma->Value -= usingAroma;
+                            juice_packets_created++;
+                            Wait(0.001);
+                        }
+                        else if (!aromaQueue.Empty()){
+                            aroma = (BarrelAroma *)aromaQueue.GetFirst();
+                            Wait(0.001);
+                        } else {
+                            break;
+                        }
+                        if (concentrate->Value < usingConcentrate && !concentrateQueue.Empty()){
+                            concentrate = (BarrelConcentrate *)concentrateQueue.GetFirst();
+                            Wait(0.001);
+                        }
+                    }
+                }
+                if (Time < 86000){
+                    Wait(1);
+                    goto idle;
+                }
+                Passivate();
+            }
+
+};
+
+JuiceMadeProcess::JuiceMadeProcess() = default;
 
 
+
+
+// Main function to run the simulation
 int main()
 {
     RandomSeed(time(nullptr));
-    SetOutput("apple.out");
-    Init(0, 50000); // 24 hours
-    (new AppleGenerator)->Activate();
-    (new Factory)->Activate();
-    Run();
-    Crates.Output();
-    Print("Apples created: %d\n\n", apples_created);
-    Print("Apples got in: %d\n\n", apples_made);
-    Print("Apples spoiled: %d\n\n", apples_were_spoiled);
-    Print("Apples in factory: %d\n\n", applesInFactory.size());
-    Print("Apples in factory: %d\n\n", hasDuplicateApples(applesInFactory));
-    Trucks.Output();
-    Forklift.Output();
-    People.Output();
-    appleToWasher.Output();
-    appleToJuiceMaker.Output();
-    juiceToDistillQueue.Output();
-    return 0;
+    SetOutput("apple_simulation.out");
+    Init(0, 86000);
 
+    (new AppleGenerator)->Activate();
+    (new BadGenerator)->Activate();
+    (new JuiceMadeProcess)->Activate();
+    // Run the simulation
+    Run();
+
+    // Output simulation statistics
+    Print("Apples created: %d\n", apples_created);
+    Print("Apples washed: %d\n", apples_washed);
+    Print("Apples spoiled: %d\n", apples_spoiled);
+    Print("Apples waiting in queue: %d\n", WashingMachine.QueueLen());
+    Print("Apples chopped: %d\n", apples_chopped);
+    Print("Apples juiced: %d\n", apples_juiced);
+    Print("Total juice: %.2f \n", total_liquid);
+    Print("ConcentrateBarrel created: %d\n", barrel_created);
+    Print("ConcentrateBarrel spoiled: %d\n", barrel_spoiled);
+    Print("aroma created: %d\n", aroma_created);
+    Print("juice maded: %d\n", juice_packets_created);
+    WashingMachine.Output();
+    Chopper.Output();
+    Juicer.Output();
+    PulpDestroyer.Output();
+    DistillStation.Output();
+    ConcentrateBarrel.Output();
+    return 0;
 }

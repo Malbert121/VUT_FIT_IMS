@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/malbert/Projects/IMS/main.cpp" "CMakeFiles/IMS.dir/main.cpp.o" "gcc" "CMakeFiles/IMS.dir/main.cpp.o.d"
+  "/home/malbert/Projects/IAL/VUT_FIT_IMS/main.cpp" "CMakeFiles/IMS.dir/main.cpp.o" "gcc" "CMakeFiles/IMS.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

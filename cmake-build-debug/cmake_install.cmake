@@ -1,4 +1,4 @@
-# Install script for directory: /home/malbert/Projects/IMS
+# Install script for directory: /home/malbert/Projects/IAL/VUT_FIT_IMS
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/malbert/Projects/IMS/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/malbert/Projects/IAL/VUT_FIT_IMS/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
