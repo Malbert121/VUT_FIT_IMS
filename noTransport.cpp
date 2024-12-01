@@ -17,7 +17,7 @@ Facility ConcentrateCheck("ConcentrateCheck");
 
 
 Queue aromaQueue("BarrelAroma waits if i can pour to Juice");
-Queue concentrateQueue("BarrelAroma waits if i can pour to Juice");
+Queue concentrateQueue("Barrelconcentrate waits if i can pour to Juice");
 
 // Counters
 unsigned apples_created = 0;
@@ -55,15 +55,15 @@ public:
     double Value;
     explicit BarrelAroma(double Value);
     void Behavior() override{
-        if (Random() < 0.60){
+        //if (Random() < 0.60){
             Wait(10);
             Into(aromaQueue);
             Passivate();
-        }
-        else{
-            Wait(100);
-            Enter(Storage, 1);
-        }
+       // }
+       // else{
+        //    Wait(100);
+       //     Enter(Storage, 1);
+       // }
 
     }
 };
@@ -96,21 +96,21 @@ public:
 
         Enter(Chopper, 1);
 
-        Wait(1.5);
+        Wait(1);
         Leave(Chopper, 1);
         apples_chopped++;
 
         Enter(Juicer, 1);
-        Wait(2);
+        Wait(1);
         Leave(Juicer, 1);
         apples_juiced++;
         Enter(PulpDestroyer, Liquid);
-        Wait(2);
+        Wait(10);
         total_liquid += Liquid;
         Leave(PulpDestroyer, Liquid);
 
         Enter(DistillStation, Liquid);
-        Wait(2);
+        Wait(10);
         Leave(DistillStation, Liquid);
 
 
@@ -141,7 +141,7 @@ class AppleGenerator : public Event
     void Behavior() override   // do not stop
     {
         (new Apple(Random() > 0.97, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = Exponential(0.1);
+        double d = Exponential(0.01);
         Activate(Time + d);
     }
 };
@@ -170,7 +170,7 @@ class JuiceMadeProcess : public Process
 public:
     JuiceMadeProcess();
     void Behavior() override{
-        Wait(1000);
+        Wait(266);
         idle:
         while (!concentrateQueue.Empty() && !aromaQueue.Empty()){
             auto *concentrate = (BarrelConcentrate *)concentrateQueue.GetFirst();
@@ -182,17 +182,14 @@ public:
                     concentrate->Value -= usingConcentrate;
                     aroma->Value -= usingAroma;
                     juice_packets_created++;
-                    Wait(0.001);
                 }
                 else if (!aromaQueue.Empty()){
                     aroma = (BarrelAroma *)aromaQueue.GetFirst();
-                    Wait(0.001);
                 } else {
                     break;
                 }
                 if (concentrate->Value < usingConcentrate && !concentrateQueue.Empty()){
                     concentrate = (BarrelConcentrate *)concentrateQueue.GetFirst();
-                    Wait(0.001);
                 }
             }
         }
@@ -227,7 +224,7 @@ int main()
     Print("Apples created: %d\n", apples_created);
     Print("Apples washed: %d\n", apples_washed);
     Print("Apples spoiled: %d\n", apples_spoiled);
-    Print("Apples waiting in queue: %d\n", WashingMachine.QueueLen());
+    Print("Apples waiting in queue to washing machine: %d\n", WashingMachine.QueueLen());
     Print("Apples chopped: %d\n", apples_chopped);
     Print("Apples juiced: %d\n", apples_juiced);
     Print("Total juice: %.2f \n", total_liquid);
@@ -241,5 +238,8 @@ int main()
     PulpDestroyer.Output();
     DistillStation.Output();
     ConcentrateBarrel.Output();
+    concentrateQueue.Output();
+    aromaQueue.Output();
+
     return 0;
 }

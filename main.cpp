@@ -141,7 +141,7 @@ class AppleGenerator : public Event
     void Behavior() override   // do not stop  
     {
         (new Apple(Random() > 0.97, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = Exponential(0.1);
+        double d = Exponential(0.01);
         Activate(Time + d);
     }
 };
