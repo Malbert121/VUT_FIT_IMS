@@ -2,10 +2,10 @@ CXX = g++
 CXXFLAGS = -std=c++11
 
 SRC_BEFORE = beforeImprovement.cpp
-OUT_BEFORE = simulation_before
+OUT_BEFORE = beforeImprovement
 
 SRC_AFTER = afterImprovement.cpp
-OUT_AFTER = simulation_after
+OUT_AFTER = afterImprovement
 
 LIBS = -lsimlib
 
