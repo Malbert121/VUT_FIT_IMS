@@ -1,18 +1,20 @@
-#include <simlib.h>             //TODO FIX ALL TIME
+#include <simlib.h>             //TODO FIX name
 #include <iostream>
 #include <cmath>
 
 
 Store WashingMachine("Washing Machine", 60);
 Store Chopper("Apples chopper", 60);
-Store Juicer("Juicer", 60);
-Store PulpDestroyer("PulpDestroyer", 15000);
-Store DistillStation("DistillStation", 15000);
+Store Juicer("Juicer", 65);
+Store PulpDestroyer("PulpDestroyer", 10000);
+Store DistillStation("DistillStation", 10000);
 Store ConcentrateBarrel("ConcentrateBarrel", 10000);
 Store AromaBarrel("AromaBarrel", 1000);
 Store Storage("Factory storage", 2000);
 Store ConcentrateCheck("Concentrate check", 5);
 
+
+Facility AppleControle("Controle if the apple is spoiled");
 Facility Pour("Pour");
 Facility PourAroma("Pour Aroma");
 
@@ -63,7 +65,7 @@ public:
     double Value;
     explicit BarrelAroma(double Value);
     void Behavior() override{
-        if(cnt++ % 11 == 0){
+        if(cnt++ % 10 == 0){
             Wait(100);
             Into(aromaQueue);
             Passivate();
@@ -93,39 +95,44 @@ public:
         apples_created++;
 
         Enter(WashingMachine, 1);
-        Wait(5);        //wash 1 second
+        Wait(Uniform(4,6));       
         Leave(WashingMachine, 1);
         apples_washed++;
 
+        Seize(AppleControle);
+        Wait(Uniform(0.075, 0.09));
         if (isSpoiled) {
             apples_spoiled++;
+            Release(AppleControle);
             Cancel();
         }
+        Release(AppleControle);
 
 
         Enter(Chopper, 1);
 
-        Wait(5);
+        Wait(Uniform(4,6));
         Leave(Chopper, 1);
         apples_chopped++;
 
         Enter(Juicer, 1);
-        Wait(5);
+        Wait(Uniform(5,6));
         Leave(Juicer, 1);
 
         apples_juiced++;
         Enter(PulpDestroyer, Liquid);
-        Wait(7.5);
+        Wait(Uniform(6,7));
         total_liquid += Liquid;
         Leave(PulpDestroyer, Liquid);
 
         Enter(DistillStation, Liquid);
-        Wait(7.5);
+        Wait(Uniform(6,7));
         Leave(DistillStation, Liquid);
 
 
         auto concentrateLiquid = std::lround(Liquid * Uniform(0.10, 0.15)); //Uniform(0.10, 0.15)
         auto aromaLiquid = std::lround(Liquid * Uniform(0.10, 0.15));
+        Wait(10);
         Enter(ConcentrateBarrel, concentrateLiquid);  //  TODO ADD AROMA PROCESS?
         Seize(Pour);
         if (ConcentrateBarrel.Used() >= 9800){
@@ -149,15 +156,23 @@ public:
 };
 
 
-class AppleGenerator : public Event
+class AppleGenerator : public Event 
 {
+    public:
+        double juiciness;
+    AppleGenerator(double juiciness);
     void Behavior() override   // do not stop
     {
-        (new Apple(Random() > 0.97, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = 0.1;
-        Activate(Time + d);
+        double genJuice = (int)Exponential(juiciness) % 300;
+        if (juiciness < 100){
+            genJuice += 100;
+        }
+        (new Apple(Random() > 0.97, genJuice))->Activate();
+        double d = 0.08333;
+        Activate(Time + Exponential(d));
     }
 };
+AppleGenerator::AppleGenerator(double juiciness) : juiciness(juiciness) {}
 
 class BadGenerator : public Event
 {
@@ -204,7 +219,7 @@ public:
             }
         }
         if (Time < 86400){
-            Wait(10000);
+            Wait(1);
             goto idle;
         }
         Passivate();
@@ -218,13 +233,24 @@ JuiceMadeProcess::JuiceMadeProcess() = default;
 
 
 // Main function to run the simulation
-int main()
+int main(int argc, char **argv)
 {
+    if (argc != 2) {
+        std::cout << "Please, enter average juiciness of every apple" << std::endl;
+        std::cout << "Acceptable interval is from 100 to 300" << std::endl;
+        std::cout << "For example: ./juiceFactory 200" << std::endl;
+        return 1;
+    }
+
+    double juiciness = atof(argv[1]); 
+    if (juiciness < 100 || juiciness > 300) {
+        std::cout << "Juiciness value must be between 100 and 300." << std::endl;
+        return 1;
+    }
     RandomSeed(time(nullptr));
     SetOutput("apple_simulation.out");
     Init(0, 86400);
-
-    (new AppleGenerator)->Activate();
+    (new AppleGenerator(juiciness))->Activate();
     (new BadGenerator)->Activate();
     (new JuiceMadeProcess)->Activate();
     // Run the simulation
