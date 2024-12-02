@@ -1,28 +1,26 @@
-#include <simlib.h>             //TODO FIX ALL TIME
+#include <simlib.h>            
 #include <iostream>
 #include <cmath>
 
-
 Store WashingMachine("Washing Machine", 60);
 Store Chopper("Apples chopper", 60);
-Store Juicer("Juicer", 60);
-Store PulpDestroyer("PulpDestroyer", 15000);
-Store DistillStation("DistillStation", 15000);
+Store Juicer("Juicer", 65);
+Store PulpDestroyer("PulpDestroyer", 10000);
+Store DistillStation("DistillStation", 10000);
 Store ConcentrateBarrel("ConcentrateBarrel", 10000);
 Store AromaBarrel("AromaBarrel", 1000);
 Store Storage("Factory storage", 2000);
 Store ConcentrateCheck("Concentrate check", 5);
+Store AppleControle("Controle if the apple is spoiled", 12);
 
 Facility Pour("Pour");
 Facility PourAroma("Pour Aroma");
 
-
 bool BadState = false;
 
 Queue aromaQueue("BarrelAroma waits if i can pour to Juice");
-Queue concentrateQueue("Barrelconcentrate waits if i can pour to Juice");
+Queue concentrateQueue("BarrelConcentrate waits if i can pour to Juice");
 
-// Counters
 unsigned apples_created = 0;
 unsigned apples_washed = 0;
 unsigned apples_spoiled = 0;
@@ -35,7 +33,6 @@ unsigned barrel_spoiled = 0;
 unsigned aroma_created = 0;
 unsigned juice_packets_created = 0;
 
-// Apple class to simulate apple creation and washing
 class BarrelConcentrate : public Process {
 
 public:
@@ -63,7 +60,7 @@ public:
     double Value;
     explicit BarrelAroma(double Value);
     void Behavior() override{
-        if(cnt++ % 11 == 0){
+        if(cnt++ % 10 == 0){
             Wait(100);
             Into(aromaQueue);
             Passivate();
@@ -79,7 +76,6 @@ public:
 
 BarrelAroma::BarrelAroma(double Value) : Value(Value) {}
 
-
 class Apple : public Process
 {
 private:
@@ -93,40 +89,42 @@ public:
         apples_created++;
 
         Enter(WashingMachine, 1);
-        Wait(5);        //wash 1 second
+        Wait(Uniform(4,6));       
         Leave(WashingMachine, 1);
         apples_washed++;
 
+        Enter(AppleControle, 1);
+        Wait(Uniform(1, 2));
         if (isSpoiled) {
             apples_spoiled++;
+            Leave(AppleControle, 1);
             Cancel();
         }
-
+        Leave(AppleControle, 1);
 
         Enter(Chopper, 1);
-
-        Wait(5);
+        Wait(Uniform(4,6));
         Leave(Chopper, 1);
         apples_chopped++;
 
         Enter(Juicer, 1);
-        Wait(5);
+        Wait(Uniform(5,6));
         Leave(Juicer, 1);
 
         apples_juiced++;
         Enter(PulpDestroyer, Liquid);
-        Wait(7.5);
+        Wait(Uniform(6,7));
         total_liquid += Liquid;
         Leave(PulpDestroyer, Liquid);
 
         Enter(DistillStation, Liquid);
-        Wait(7.5);
+        Wait(Uniform(6,7));
         Leave(DistillStation, Liquid);
 
-
-        auto concentrateLiquid = std::lround(Liquid * Uniform(0.10, 0.15)); //Uniform(0.10, 0.15)
+        auto concentrateLiquid = std::lround(Liquid * Uniform(0.10, 0.15)); 
         auto aromaLiquid = std::lround(Liquid * Uniform(0.10, 0.15));
-        Enter(ConcentrateBarrel, concentrateLiquid);  //  TODO ADD AROMA PROCESS?
+        Wait(10);
+        Enter(ConcentrateBarrel, concentrateLiquid);  
         Seize(Pour);
         if (ConcentrateBarrel.Used() >= 9800){
             (new BarrelConcentrate((double)ConcentrateBarrel.Used()))->Activate();
@@ -149,15 +147,23 @@ public:
 };
 
 
-class AppleGenerator : public Event
+class AppleGenerator : public Event 
 {
-    void Behavior() override   // do not stop
+    public:
+        double juiciness;
+    AppleGenerator(double juiciness);
+    void Behavior() override   
     {
-        (new Apple(Random() > 0.97, 100 + ((int)Exponential(100) % 200)))->Activate();
-        double d = 0.1;
-        Activate(Time + d);
+        double genJuice = (int)Exponential(juiciness) % 300;
+        if (juiciness < 100){
+            genJuice += 100;
+        }
+        (new Apple(Random() > 0.97, genJuice))->Activate();
+        double d = 0.08333;
+        Activate(Time + Exponential(d));
     }
 };
+AppleGenerator::AppleGenerator(double juiciness) : juiciness(juiciness) {}
 
 class BadGenerator : public Event
 {
@@ -166,10 +172,9 @@ class BadGenerator : public Event
         if (Random() < 0.4){
             BadState = true;
         } else{
-
         }
 
-        Activate(Time + Exponential(3600 * 6));                   // TODO FIX TIME
+        Activate(Time + Exponential(3600 * 6));                
     }
 };
 
@@ -204,7 +209,7 @@ public:
             }
         }
         if (Time < 86400){
-            Wait(10000);
+            Wait(1);
             goto idle;
         }
         Passivate();
@@ -215,33 +220,40 @@ public:
 JuiceMadeProcess::JuiceMadeProcess() = default;
 
 
-
-
-// Main function to run the simulation
-int main()
+int main(int argc, char **argv)
 {
+    if (argc != 2) {
+        std::cout << "Please, enter average juiciness of every apple" << std::endl;
+        std::cout << "Acceptable interval is from 100 to 300" << std::endl;
+        std::cout << "For example: ./juiceFactory 200" << std::endl;
+        return 1;
+    }
+
+    double juiciness = atof(argv[1]); 
+    if (juiciness < 100 || juiciness > 300) {
+        std::cout << "Juiciness value must be between 100 and 300." << std::endl;
+        return 1;
+    }
+
     RandomSeed(time(nullptr));
     SetOutput("apple_simulation.out");
     Init(0, 86400);
 
-    (new AppleGenerator)->Activate();
+    (new AppleGenerator(juiciness))->Activate();
     (new BadGenerator)->Activate();
     (new JuiceMadeProcess)->Activate();
-    // Run the simulation
-    Run();
 
-    // Output simulation statistics
+    Run();
     Print("Apples created: %d\n", apples_created);
     Print("Apples washed: %d\n", apples_washed);
     Print("Apples spoiled: %d\n", apples_spoiled);
-    Print("Apples waiting in queue to washing machine: %d\n", WashingMachine.QueueLen());
     Print("Apples chopped: %d\n", apples_chopped);
     Print("Apples juiced: %d\n", apples_juiced);
     Print("Total juice: %.2f \n", total_liquid);
     Print("ConcentrateBarrel created: %d\n", barrel_created);
     Print("ConcentrateBarrel spoiled: %d\n", barrel_spoiled);
     Print("aroma created: %d\n", aroma_created);
-    Print("juice maded: %d\n", juice_packets_created);
+    Print("juice made: %d\n", juice_packets_created);
     WashingMachine.Output();
     Chopper.Output();
     Juicer.Output();
@@ -251,7 +263,6 @@ int main()
     AromaBarrel.Output();
     concentrateQueue.Output();
     aromaQueue.Output();
-
     Storage.Output();
 
     return 0;

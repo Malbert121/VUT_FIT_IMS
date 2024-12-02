@@ -1,0 +1,156 @@
+Apples created: 1036040
+Apples washed: 1035682
+Apples spoiled: 20706
+Apples waiting in queue to washing machine: 298
+Apples chopped: 670280
+Apples juiced: 670241
+Total juice: 56139901.00 
+ConcentrateBarrel created: 712
+ConcentrateBarrel spoiled: 1
+aroma created: 918
+juice maded: 69445
++----------------------------------------------------------+
+| STORE Washing Machine                                    |
++----------------------------------------------------------+
+|  Capacity = 60  (60 used, 0 free)                        |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 1035742                    |
+|  Minimal used capacity = 1                               |
+|  Maximal used capacity = 60                              |
+|  Average used capacity = 59.9281                         |
++----------------------------------------------------------+
+  Input queue 'Washing Machine.Q'
++----------------------------------------------------------+
+| QUEUE Q                                                  |
++----------------------------------------------------------+
+|  Time interval = 0 - 86400                               |
+|  Incoming  1022422                                       |
+|  Outcoming  1022124                                      |
+|  Current length = 298                                    |
+|  Maximal length = 829                                    |
+|  Average length = 240.194                                |
+|  Minimal time = 3.68484e-05                              |
+|  Maximal time = 68.8866                                  |
+|  Average time = 20.2995                                  |
+|  Standard deviation = 14.0638                            |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE Apples chopper                                     |
++----------------------------------------------------------+
+|  Capacity = 60  (39 used, 21 free)                       |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 670319                     |
+|  Minimal used capacity = 1                               |
+|  Maximal used capacity = 51                              |
+|  Average used capacity = 38.7812                         |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE Juicer                                             |
++----------------------------------------------------------+
+|  Capacity = 65  (39 used, 26 free)                       |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 670280                     |
+|  Minimal used capacity = 1                               |
+|  Maximal used capacity = 57                              |
+|  Average used capacity = 42.6707                         |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE PulpDestroyer                                      |
++----------------------------------------------------------+
+|  Capacity = 10000  (3942 used, 6058 free)                |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 670241                     |
+|  Minimal used capacity = 53                              |
+|  Maximal used capacity = 7137                            |
+|  Average used capacity = 4223.62                         |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE DistillStation                                     |
++----------------------------------------------------------+
+|  Capacity = 10000  (5322 used, 4678 free)                |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 670190                     |
+|  Minimal used capacity = 53                              |
+|  Maximal used capacity = 7006                            |
+|  Average used capacity = 4222.88                         |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE ConcentrateBarrel                                  |
++----------------------------------------------------------+
+|  Capacity = 10000  (3375 used, 6625 free)                |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 670061                     |
+|  Minimal used capacity = 0                               |
+|  Maximal used capacity = 9972                            |
+|  Average used capacity = 4910.56                         |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| STORE AromaBarrel                                        |
++----------------------------------------------------------+
+|  Capacity = 1000  (518 used, 482 free)                   |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 86361                      |
+|  Minimal used capacity = 0                               |
+|  Maximal used capacity = 1000                            |
+|  Average used capacity = 486.442                         |
++----------------------------------------------------------+
+  Input queue 'AromaBarrel.Q'
++----------------------------------------------------------+
+| QUEUE Q                                                  |
++----------------------------------------------------------+
+|  Time interval = 0 - 86400                               |
+|  Incoming  105                                           |
+|  Outcoming  105                                          |
+|  Current length = 0                                      |
+|  Maximal length = 3                                      |
+|  Average length = 0.00185185                             |
+|  Minimal time = 1                                        |
+|  Maximal time = 4                                        |
+|  Average time = 1.52381                                  |
+|  Standard deviation = 0.855921                           |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| QUEUE Barrelconcentrate waits if i can pour to Juice            |
++----------------------------------------------------------+
+|  Time interval = 0 - 86400                               |
+|  Incoming  710                                           |
+|  Outcoming  708                                          |
+|  Current length = 2                                      |
+|  Maximal length = 15                                     |
+|  Average length = 4.23426                                |
+|  Minimal time = 1.12505                                  |
+|  Maximal time = 1698.13                                  |
+|  Average time = 516.371                                  |
+|  Standard deviation = 318.328                            |
++----------------------------------------------------------+
++----------------------------------------------------------+
+| QUEUE BarrelAroma waits if i can pour to Juice            |
++----------------------------------------------------------+
+|  Time interval = 0 - 86400                               |
+|  Incoming  92                                            |
+|  Outcoming  92                                           |
+|  Current length = 0                                      |
+|  Maximal length = 1                                      |
+|  Average length = 0.426418                               |
+|  Minimal time = 400.125                                  |
+|  Maximal time = 431.125                                  |
+|  Average time = 400.462                                  |
++----------------------------------------------------------+
++----------------------------------------------------------+
+| STORE Factory storage                                    |
++----------------------------------------------------------+
+|  Capacity = 2000  (826 used, 1174 free)                  |
+|  Time interval = 0 - 86400                               |
+|  Number of Enter operations = 826                        |
+|  Minimal used capacity = 1                               |
+|  Maximal used capacity = 826                             |
+|  Average used capacity = 412.183                         |
++----------------------------------------------------------+
+
