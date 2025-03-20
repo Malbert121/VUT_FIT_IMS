@@ -1,1 +1,0 @@
-/usr/bin/g++ -g CMakeFiles/IMS.dir/main.cpp.o -o IMS   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib -lsimlib
